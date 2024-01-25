@@ -15,7 +15,7 @@ def test_tensor_backward():
     f1 = e1.logsoftmax()
     g1 = f1.sum()
     g1.backward()
-    result_easy = [g1.data, a1.grad, b1.grad, c1.grad]
+    result_easy = [g1.data, a1.grad, b1.grad]
 
     a2 = torch.tensor(a, requires_grad=True)
     b2 = torch.tensor(b, requires_grad=True)

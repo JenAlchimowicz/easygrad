@@ -20,11 +20,11 @@ class Tensor:
         self.grad = None
         self.ctx = None
 
-    def backward(self):
+    def backward(self, allow_fill=True):
         if self.ctx is None:  # Nothing to backpropagate to
             return
         
-        if self.grad is None:
+        if self.grad is None and allow_fill:
             self.grad = np.array([1])
         
         grads = self.ctx.op.backward(self.ctx, self.grad)
@@ -33,7 +33,7 @@ class Tensor:
         for child, grad in zip(self.ctx.children, grads):
             assert(child.data.shape == grad.shape), f"Wrong shapes of gradients, data shape: {child.data.shape}, grad shape: {grad.shape}, op: {self.ctx.op}"
             child.grad = grad
-            child.backward()
+            child.backward(False)
 
     # Non class ops (just use other functions)
     def mean(self):
@@ -133,8 +133,9 @@ register(ReLU, "relu")
 class LogSoftmax(Function):
     @staticmethod
     def forward(ctx, x):
-        e_x = np.exp(x - x.max())
-        out = np.log(e_x / e_x.sum())
+        max_per_sample = x.max(axis=1).reshape(-1,1)
+        e_x = np.exp(x - max_per_sample)
+        out = np.log(e_x / e_x.sum(axis=1).reshape(-1,1))
         ctx.save_for_backward(out)
         return out
 
