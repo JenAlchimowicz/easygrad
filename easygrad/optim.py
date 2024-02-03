@@ -2,19 +2,19 @@ import numpy as np
 
 
 class SGD:
-    def __init__(self, params, learning_rate):
+    def __init__(self, params, lr=0.001):
         self.params = params
-        self.lr = learning_rate
+        self.lr = lr
 
     def step(self):
         for param in self.params:
-            param.data -= param.grad * self.lr
+            param.data -= self.lr * param.grad
 
 
 class RMSprop:
-    def __init__(self, params, learning_rate, decay=0.999, eps=1e-8):
+    def __init__(self, params, lr=0.01, decay=0.99, eps=1e-8):
         self.params = params
-        self.lr = learning_rate
+        self.lr = lr
         self.decay = decay
         self.eps = eps
         self.s = [np.zeros_like(param.data) for param in self.params]
@@ -26,9 +26,9 @@ class RMSprop:
 
 
 class Adam:
-    def __init__(self, params, learning_rate, b1=0.9, b2=0.999, eps=1e-8):
+    def __init__(self, params, lr=0.001, b1=0.9, b2=0.999, eps=1e-8):
         self.params = params
-        self.lr = learning_rate
+        self.lr = lr
         self.b1 = b1
         self.b2 = b2
         self.eps = eps
@@ -43,8 +43,8 @@ class Adam:
             self.s[i] = self.b2 * self.s[i] + (1 - self.b2) * np.square(param.grad)
 
             # Correction
-            self.v[i] = self.v[i] / np.sqrt(1 - np.pow(self.b1, self.t))
-            self.s[i] = self.s[i] / np.sqrt(1 - np.pow(self.b1, self.t))
+            self.v[i] = self.v[i] / np.sqrt(1 - np.power(self.b1, self.t))
+            self.s[i] = self.s[i] / np.sqrt(1 - np.power(self.b1, self.t))
 
             # Update
             param.data -= self.lr * self.v[i] / np.sqrt(self.s[i] + self.eps)
