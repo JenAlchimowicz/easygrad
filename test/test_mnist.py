@@ -1,18 +1,18 @@
 import gzip
 import hashlib
 from pathlib import Path
-from turtle import mode
+
+import numpy as np
 import requests
 from tqdm import tqdm
 
-import numpy as np
-from tensor import Tensor
+from easygrad.tensor import Tensor
 
 
 def fetch(url, mnist_path = Path("mnist")):
     if not mnist_path.exists():
         mnist_path.mkdir()
-    file_path = mnist_path / hashlib.md5(url.encode('utf-8')).hexdigest()
+    file_path = mnist_path / hashlib.md5(url.encode("utf-8")).hexdigest()
     if file_path.exists():
         with open(file_path, "rb") as f:
             data = f.read()
@@ -42,10 +42,10 @@ class TensorModel:
     def __call__(self, x):
         assert(isinstance(x, Tensor)), "Only inputs of type Tensor allowed"
         return x.dot(self.l1).relu().dot(self.l2).logsoftmax()
-    
+
     def params(self):
         return [self.l1, self.l2]
-    
+
 def eval(model):
     x_test = Tensor(test_images)
     log_probs = model(x_test)
@@ -92,7 +92,6 @@ def test_mnist():
         #     accuracy = np.equal(preds, y_sample).sum() / preds.size
         #     test_accuracy = eval(model)
         #     print(f"Step: {step:03d}, loss: {nll.data.item():.5f}, accuracy: {accuracy:.4f}, test accuracy: {test_accuracy:.4f}")
-    
-    preds = np.argmax(log_probs.data, axis=1)
+
     test_accuracy = eval(model)
     assert test_accuracy > 0.94

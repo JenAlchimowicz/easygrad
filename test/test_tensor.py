@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from tensor import Tensor
+from easygrad.tensor import Tensor
 
 
 def test_tensor_backward():
