@@ -43,8 +43,8 @@ class Adam:
             self.s[i] = self.b2 * self.s[i] + (1 - self.b2) * np.square(param.grad)
 
             # Correction
-            self.v[i] = self.v[i] / np.sqrt(1 - np.power(self.b1, self.t))
-            self.s[i] = self.s[i] / np.sqrt(1 - np.power(self.b1, self.t))
+            self.v[i] = self.v[i] / (1 - np.power(self.b1, self.t))
+            self.s[i] = self.s[i] / (1 - np.power(self.b2, self.t))
 
             # Update
             param.data -= self.lr * self.v[i] / np.sqrt(self.s[i] + self.eps)
