@@ -4,7 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import requests
-from tqdm import tqdm
 
 from easygrad.tensor import Tensor
 

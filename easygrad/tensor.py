@@ -81,6 +81,16 @@ class Add(Function):
         return grad, grad
 register(Add, "add")
 
+class Sub(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray, y: np.ndarray):
+        return x - y
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        return grad, -grad
+register(Sub, "sub")
+
 class Mul(Function):
     @staticmethod
     def forward(ctx: Context, x: np.ndarray, y: np.ndarray):
