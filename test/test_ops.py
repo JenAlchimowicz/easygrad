@@ -40,6 +40,7 @@ def helper_test_op(shapes, easygrad_fn, torch_fn, atol=1e-7, grad_atol=1e-7):
 
 
 class TestOp:
+    # Element wise ops
     def test_add(self):
         helper_test_op([(1, 16), (1, 16)], Tensor.add, lambda x,y: x+y)
         helper_test_op([(16, 32), (16, 32)], Tensor.add, lambda x,y: x+y)
@@ -49,14 +50,27 @@ class TestOp:
     def test_mul(self):
         helper_test_op([(1, 16), (1, 16)], Tensor.mul, lambda x,y: x*y)
         helper_test_op([(16, 32), (16, 32)], Tensor.mul, lambda x,y: x*y)
+
+    # Aggregation ops
+    def test_sum(self):
+        helper_test_op([(1, 16)], Tensor.sum, lambda x: x.sum(), atol=1e-6)
+        helper_test_op([(16, 32)], Tensor.sum, lambda x: x.sum(), atol=1e-6)
+
+    # Tensor ops
     def test_dot(self):
         helper_test_op([(1, 16), (16, 1)], Tensor.dot, lambda x,y: x.matmul(y))
         helper_test_op([(16, 32), (32, 16)], Tensor.dot, lambda x,y: x.matmul(y))
-    def test_sum(self):
-        pass
-    def test_softmax(self):
-        pass
+    
+    # Activation functions
+    def test_relu(self):
+        helper_test_op([(1, 16)], Tensor.relu, lambda x: x.relu())
+        helper_test_op([(16, 32)], Tensor.relu, lambda x: x.relu())
     def test_sigmoid(self):
-        pass
+        helper_test_op([(1, 16)], Tensor.sigmoid, lambda x: x.sigmoid())
+        helper_test_op([(16, 32)], Tensor.sigmoid, lambda x: x.sigmoid())
     def test_tanh(self):
-        pass
+        helper_test_op([(1, 16)], Tensor.tanh, lambda x: x.tanh(), atol=1e-6)
+        helper_test_op([(16, 32)], Tensor.tanh, lambda x: x.tanh(), atol=1e-6)
+    def test_logsoftmax(self):
+        helper_test_op([(1, 16)], Tensor.logsoftmax, lambda x: torch.nn.functional.log_softmax(x, dim=1), atol=1e-6)
+        helper_test_op([(16, 32)], Tensor.logsoftmax, lambda x: torch.nn.functional.log_softmax(x, dim=1), atol=1e-6)
