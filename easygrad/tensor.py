@@ -69,7 +69,7 @@ def register(op, name):
     setattr(Tensor, name, partialmethod(op.apply, op))
 
 
-###### SIMPLE OPS #######
+###### ELEMENT WISE OPS #######
 
 class Add(Function):
     @staticmethod
@@ -102,6 +102,9 @@ class Mul(Function):
         x, y = ctx.saved_for_backward
         return grad*y, grad*x
 register(Mul, "mul")
+
+
+###### AGGREGATION OPS #######
 
 class Sum(Function):
     @staticmethod
@@ -150,6 +153,32 @@ class ReLU(Function):
         return grad_out
 register(ReLU, "relu")
 
+class Sigmoid(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray):
+        out = 1 / (1 + np.power(np.e, -x))
+        ctx.save_for_backward(out)
+        return out
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        out, = ctx.saved_for_backward
+        return grad * out * (1 - out)
+register(Sigmoid, "sigmoid")
+
+class Tanh(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray):
+        out = (2 / (1 + np.power(np.e, -2 * x))) - 1
+        ctx.save_for_backward(out)
+        return out
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        out, = ctx.saved_for_backward
+        return grad * (1 - np.square(out))
+register(Tanh, "tanh")
+
 class LogSoftmax(Function):
     @staticmethod
     def forward(ctx, x):
@@ -161,7 +190,6 @@ class LogSoftmax(Function):
 
     @staticmethod
     def backward(ctx, grad):
-        output, = ctx.saved_for_backward
-        return grad - np.exp(output)*grad.sum(axis=1).reshape((-1, 1))
+        out, = ctx.saved_for_backward
+        return grad - np.exp(out)*grad.sum(axis=1).reshape((-1, 1))
 register(LogSoftmax, "logsoftmax")
-
