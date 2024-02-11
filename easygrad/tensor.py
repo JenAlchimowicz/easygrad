@@ -125,14 +125,33 @@ class Dot(Function):
     @staticmethod
     def forward(ctx: Context, x: np.ndarray, y: np.ndarray):
         ctx.save_for_backward(x, y)
-        return x.dot(y)
+        return np.matmul(x, y)
 
+    # TODO: this code is very clunky, make it smarter
     @staticmethod
     def backward(ctx: Context, grad: np.ndarray):
         x, y = ctx.saved_for_backward
-        # print(x.shape, y.shape, grad.shape)
-        x_grad = grad.dot(y.T)
-        y_grad = x.T.dot(grad)
+
+        # If statements take care of high dimensional arrays
+        dims_x = len(x.shape)
+        dims_y = len(y.shape)
+
+        if dims_y > 1:
+            x_grad = np.matmul(grad, y.transpose(*range(dims_y - 2), -1, -2))
+        else:
+            x_grad = np.matmul(grad, y.T)
+        if dims_x > 1:
+            y_grad = np.matmul(x.transpose(*range(dims_x - 2), -1, -2), grad)
+        else:
+            y_grad = np.matmul(x.T, grad)
+
+        # Adjust for broadcasting
+        # Only works if added dim is in position 0, need to handle more?
+        if dims_y > dims_x:
+            x_grad = x_grad.sum(axis=0)
+        if dims_x > dims_y:
+            y_grad = y_grad.sum(axis=0)
+            
         return x_grad, y_grad
 register(Dot, "dot")
 
