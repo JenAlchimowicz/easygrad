@@ -60,6 +60,10 @@ class TestOp:
     def test_dot(self):
         helper_test_op([(1, 16), (16, 1)], Tensor.dot, lambda x,y: x.matmul(y))
         helper_test_op([(16, 32), (32, 16)], Tensor.dot, lambda x,y: x.matmul(y))
+    def test_reshape(self):
+        helper_test_op([(1, 16)], lambda x: x.reshape(shape=(4,4)), lambda x: torch.reshape(x, (4,4)))
+        helper_test_op([(4, 4)], lambda x: x.reshape(shape=(1,16)), lambda x: torch.reshape(x, (1,16)))
+        helper_test_op([(4, 3, 6, 6)], lambda x: x.reshape(shape=(-1,3,6,6)), lambda x: torch.reshape(x, (-1,3,6,6)))
     
     # Activation functions
     def test_relu(self):

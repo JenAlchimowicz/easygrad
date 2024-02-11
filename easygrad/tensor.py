@@ -58,10 +58,10 @@ class Tensor:
 ###### FUNCTION DEF #######
 
 class Function:
-    def apply(self, op, *tensors):  #self=Tensor, op(fixed), tensors=real input
+    def apply(self, op, *tensors, **kwargs):  #self=Tensor, op(fixed), tensors=real input, kwargs=extra parameters e.g. shape in reshape
         inputs = [self] + list(tensors)
         ctx = Context(op, *inputs)
-        out = Tensor(ctx.op.forward(ctx, *[t.data for t in inputs]))
+        out = Tensor(ctx.op.forward(ctx, *[t.data for t in inputs], **kwargs))
         out.ctx = ctx
         return out
 
@@ -135,6 +135,18 @@ class Dot(Function):
         y_grad = x.T.dot(grad)
         return x_grad, y_grad
 register(Dot, "dot")
+
+class Reshape(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray, shape: tuple):
+        ctx.save_for_backward(x.shape)
+        return x.reshape(shape)
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        shape, = ctx.saved_for_backward
+        return grad.reshape(shape)
+register(Reshape, "reshape")
 
 
 ###### ACTIVATIONS #######
