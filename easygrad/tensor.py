@@ -112,6 +112,18 @@ class Mul(Function):
         return grad*y, grad*x
 register(Mul, "mul")
 
+class Div(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray, y: np.ndarray):
+        ctx.save_for_backward(x, y)
+        return x / y
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        x, y = ctx.saved_for_backward
+        return grad*(1/y), grad*(-x * np.power(y, -2))
+register(Div, "div")
+
 
 ###### REDUCE OPS #######
 
