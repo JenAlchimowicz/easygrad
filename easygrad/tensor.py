@@ -124,6 +124,18 @@ class Div(Function):
         return grad*(1/y), grad*(-x * np.power(y, -2))
 register(Div, "div")
 
+class Sqrt(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray):
+        ctx.save_for_backward(x)
+        return np.sqrt(x)
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        x, = ctx.saved_for_backward
+        return grad * (0.5 * np.power(x, -0.5))
+register(Sqrt, "sqrt")
+
 
 ###### REDUCE OPS #######
 

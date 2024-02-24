@@ -53,6 +53,9 @@ class TestOp:
     def test_div(self):
         helper_test_op([(1,16), (1,16)], Tensor.div, lambda x,y: x/y)
         helper_test_op([(16,32), (16,32)], Tensor.div, lambda x,y: x/y)
+    def test_sqrt(self):
+        helper_test_op([(1,16)], Tensor.sqrt, lambda x: x.sqrt(), atol=1e-6)
+        helper_test_op([(16,32)], Tensor.sqrt, lambda x: x.sqrt(), atol=1e-6)
 
     # Reduce ops
     def test_sum(self):
