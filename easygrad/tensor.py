@@ -15,7 +15,7 @@ class Context:
 
 class Tensor:
     def __init__(self, data: np.ndarray):
-        assert(isinstance(data, np.ndarray)), "Only numpy arrays allowed as input to Tensor"
+        assert(isinstance(data, np.ndarray)), f"Only numpy arrays allowed as input to Tensor, got {type(data)}"
         self.data = data
         self.grad = None
         self.ctx = None
@@ -47,9 +47,18 @@ class Tensor:
                 child.grad = grad if child.grad is None else child.grad + grad
 
     # Non class ops (just use other functions)
-    def mean(self):
-        div = Tensor(np.array([1/self.data.size], dtype=self.data.dtype))
-        return self.sum().mul(div)
+    def mean(self, axis=None, keepdims=False):
+        out = self.sum(axis=axis, keepdims=keepdims)
+        div = np.ones(out.shape) * (np.prod(out.shape) / np.prod(self.shape))
+        div = Tensor(div)
+        return out.mul(div)
+
+    def square(self):
+        return self.mul(self)
+    
+    @property
+    def shape(self):
+        return self.data.shape
 
     def __repr__(self):
         return f"Tensor of shape: {self.data.shape}, grad: {self.grad}, Data: {self.data}"
@@ -104,18 +113,27 @@ class Mul(Function):
 register(Mul, "mul")
 
 
-###### AGGREGATION OPS #######
+###### REDUCE OPS #######
 
 class Sum(Function):
     @staticmethod
-    def forward(ctx: Context, x: np.ndarray):
-        ctx.save_for_backward(x)
-        return np.array([x.sum()])
+    def forward(ctx: Context, x: np.ndarray, axis=None, keepdims=False):
+        if not axis:
+            axis = tuple(range(len(x.shape)))
+            axis_ = axis[1:]
+        else:
+            axis_ = axis
+        ctx.save_for_backward(x.shape, axis_, keepdims)
+        out = x.sum(axis=axis, keepdims=keepdims)
+        return np.array([out]) if out.size == 1 else out
 
     @staticmethod
     def backward(ctx: Context, grad: np.ndarray):
-        x, = ctx.saved_for_backward
-        return np.ones_like(x) * grad
+        original_shape, axis, keepdims = ctx.saved_for_backward
+        if not keepdims:
+            grad = np.expand_dims(grad, axis)
+        grad = np.broadcast_to(grad, original_shape)
+        return grad
 register(Sum, "sum")
 
 
@@ -166,6 +184,24 @@ class Reshape(Function):
         shape, = ctx.saved_for_backward
         return grad.reshape(shape)
 register(Reshape, "reshape")
+
+class Expand(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray, shape: tuple):
+        ctx.save_for_backward(x.shape)
+        return np.broadcast_to(x, shape)
+
+    # TODO: there must be a cleaner way to write this
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        original_shape, = ctx.saved_for_backward
+        n_dims_to_reduce = len(grad.shape) - len(original_shape)
+        if np.prod(original_shape) == 1:
+            n_dims_to_reduce += 1
+        dims_to_reduce = tuple(np.arange(n_dims_to_reduce).tolist())
+        out = np.sum(grad, axis=dims_to_reduce)
+        return out if np.prod(original_shape) > 1 else np.array([out])
+register(Expand, "expand")
 
 
 ###### ACTIVATIONS #######

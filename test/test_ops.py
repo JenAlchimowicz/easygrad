@@ -42,43 +42,70 @@ def helper_test_op(shapes, easygrad_fn, torch_fn, atol=1e-7, grad_atol=1e-7):
 class TestOp:
     # Element wise ops
     def test_add(self):
-        helper_test_op([(1, 16), (1, 16)], Tensor.add, lambda x,y: x+y)
-        helper_test_op([(16, 32), (16, 32)], Tensor.add, lambda x,y: x+y)
+        helper_test_op([(1,16), (1,16)], Tensor.add, lambda x,y: x+y)
+        helper_test_op([(16,32), (16,32)], Tensor.add, lambda x,y: x+y)
     def test_sub(self):
-        helper_test_op([(1, 16), (1, 16)], Tensor.sub, lambda x,y: x-y)
-        helper_test_op([(16, 32), (16, 32)], Tensor.sub, lambda x,y: x-y)
+        helper_test_op([(1,16), (1,16)], Tensor.sub, lambda x,y: x-y)
+        helper_test_op([(16,32), (16,32)], Tensor.sub, lambda x,y: x-y)
     def test_mul(self):
-        helper_test_op([(1, 16), (1, 16)], Tensor.mul, lambda x,y: x*y)
-        helper_test_op([(16, 32), (16, 32)], Tensor.mul, lambda x,y: x*y)
+        helper_test_op([(1,16), (1,16)], Tensor.mul, lambda x,y: x*y)
+        helper_test_op([(16,32), (16,32)], Tensor.mul, lambda x,y: x*y)
 
-    # Aggregation ops
+    # Reduce ops
     def test_sum(self):
-        helper_test_op([(1, 16)], Tensor.sum, lambda x: x.sum(), atol=1e-5)  # TODO: why needs more tolerance??
-        helper_test_op([(16, 32)], Tensor.sum, lambda x: x.sum(), atol=1e-5)  # TODO: why needs more tolerance??
+        helper_test_op([(1,16)], Tensor.sum, lambda x: x.sum(), atol=1e-5)  # TODO: why needs more tolerance??
+        helper_test_op([(16,32)], Tensor.sum, lambda x: x.sum(), atol=1e-5)
+        helper_test_op([(16)], lambda x: x.sum(axis=0), lambda x: x.sum(axis=0), atol=1e-5)
+        # helper_test_op([(1,16)], lambda x: x.sum(axis=1), lambda x: x.sum(axis=1), atol=1e-5)  # TODO: make output shapes consistent with PyTorch if needed
+        helper_test_op([(2,16)], lambda x: x.sum(axis=1), lambda x: x.sum(axis=1), atol=1e-5)
+        helper_test_op([(4,4,4)], lambda x: x.sum(axis=2), lambda x: x.sum(axis=2), atol=1e-5)
+        helper_test_op([(4,4,4)], lambda x: x.sum(axis=(1,2)), lambda x: x.sum(axis=(1,2)), atol=1e-5)
+        helper_test_op([(4,1,4)], lambda x: x.sum(axis=(2)), lambda x: x.sum(axis=(2)), atol=1e-5)
+    def test_sum_with_keepdims(self):
+        helper_test_op([(4,4,4)], lambda x: x.sum(axis=2, keepdims=True), lambda x: x.sum(axis=2, keepdim=True), atol=1e-5)
+        helper_test_op([(4,4,4)], lambda x: x.sum(axis=(1,2), keepdims=True), lambda x: x.sum(axis=(1,2), keepdim=True), atol=1e-5)
+        helper_test_op([(4,1,4)], lambda x: x.sum(axis=(2), keepdims=True), lambda x: x.sum(axis=(2), keepdim=True), atol=1e-5)
+    def test_mean(self):
+        helper_test_op([(1,16)], Tensor.mean, lambda x: x.mean(), atol=1e-6)
+        helper_test_op([(16,32)], Tensor.mean, lambda x: x.mean(), atol=1e-6)
+        helper_test_op([(16)], lambda x: x.mean(axis=0), lambda x: x.mean(axis=0), atol=1e-6)
+        # helper_test_op([(1,16)], lambda x: x.mean(axis=1), lambda x: x.mean(axis=1), atol=1e-6)
+        helper_test_op([(2,16)], lambda x: x.mean(axis=1), lambda x: x.mean(axis=1), atol=1e-6)
+        helper_test_op([(4,4,4)], lambda x: x.mean(axis=2), lambda x: x.mean(axis=2), atol=1e-6)
+        helper_test_op([(4,4,4)], lambda x: x.mean(axis=(1,2)), lambda x: x.mean(axis=(1,2)), atol=1e-6)
+        helper_test_op([(4,1,4)], lambda x: x.mean(axis=(2)), lambda x: x.mean(axis=(2)), atol=1e-6)
+    def test_mean_with_keepdims(self):
+        helper_test_op([(4,4,4)], lambda x: x.mean(axis=2, keepdims=True), lambda x: x.mean(axis=2, keepdim=True), atol=1e-6)
+        helper_test_op([(4,4,4)], lambda x: x.mean(axis=(1,2), keepdims=True), lambda x: x.mean(axis=(1,2), keepdim=True), atol=1e-6)
+        helper_test_op([(4,1,4)], lambda x: x.mean(axis=(2), keepdims=True), lambda x: x.mean(axis=(2), keepdim=True), atol=1e-6)
 
     # Tensor ops
     def test_dot(self):
-        helper_test_op([(1, 16), (16, 1)], Tensor.dot, lambda x,y: x.matmul(y))
-        helper_test_op([(16, 32), (32, 16)], Tensor.dot, lambda x,y: x.matmul(y), atol=1e-5)  # TODO: why needs more tolerance??
-        helper_test_op([(1, 1, 1, 5), (1, 1, 5, 1)], Tensor.dot, lambda x,y: x.matmul(y))
-        helper_test_op([(2, 3, 4, 5), (2, 3, 5, 6)], Tensor.dot, lambda x,y: x.matmul(y))
-        # TODO: handle cases with broadcasting
-        helper_test_op([(3, 4, 5), (2, 3, 5, 6)], Tensor.dot, lambda x,y: x.matmul(y))
+        helper_test_op([(1,16), (16, 1)], Tensor.dot, lambda x,y: x.matmul(y))
+        helper_test_op([(16,32), (32, 16)], Tensor.dot, lambda x,y: x.matmul(y), atol=1e-5)  # TODO: why needs more tolerance??
+        helper_test_op([(1,1,1,5), (1,1,5,1)], Tensor.dot, lambda x,y: x.matmul(y))
+        helper_test_op([(2,3,4,5), (2,3,5,6)], Tensor.dot, lambda x,y: x.matmul(y))
+        helper_test_op([(3,4,5), (2,3,5,6)], Tensor.dot, lambda x,y: x.matmul(y))
     def test_reshape(self):
-        helper_test_op([(1, 16)], lambda x: x.reshape(shape=(4,4)), lambda x: torch.reshape(x, (4,4)))
-        helper_test_op([(4, 4)], lambda x: x.reshape(shape=(1,16)), lambda x: torch.reshape(x, (1,16)))
-        helper_test_op([(4, 3, 6, 6)], lambda x: x.reshape(shape=(-1,3,6,6)), lambda x: torch.reshape(x, (-1,3,6,6)))
+        helper_test_op([(1,16)], lambda x: x.reshape(shape=(4,4)), lambda x: torch.reshape(x, (4,4)))
+        helper_test_op([(4,4)], lambda x: x.reshape(shape=(1,16)), lambda x: torch.reshape(x, (1,16)))
+        helper_test_op([(4,3,6,6)], lambda x: x.reshape(shape=(-1,3,6,6)), lambda x: torch.reshape(x, (-1,3,6,6)))
+    def test_expand(self):
+        helper_test_op([(1)], lambda x: x.expand(shape=(2)), lambda x: x.expand(2))
+        helper_test_op([(1)], lambda x: x.expand(shape=(2,2)), lambda x: x.expand(2,2))
+        helper_test_op([(2)], lambda x: x.expand(shape=(3,4,2)), lambda x: x.expand(3,4,2))
+        helper_test_op([(2,2)], lambda x: x.expand(shape=(4,3,2,2)), lambda x: x.expand(4,3,2,2))
     
     # Activation functions
     def test_relu(self):
-        helper_test_op([(1, 16)], Tensor.relu, lambda x: x.relu())
-        helper_test_op([(16, 32)], Tensor.relu, lambda x: x.relu())
+        helper_test_op([(1,16)], Tensor.relu, lambda x: x.relu())
+        helper_test_op([(16,32)], Tensor.relu, lambda x: x.relu())
     def test_sigmoid(self):
-        helper_test_op([(1, 16)], Tensor.sigmoid, lambda x: x.sigmoid())
-        helper_test_op([(16, 32)], Tensor.sigmoid, lambda x: x.sigmoid())
+        helper_test_op([(1,16)], Tensor.sigmoid, lambda x: x.sigmoid())
+        helper_test_op([(16,32)], Tensor.sigmoid, lambda x: x.sigmoid())
     def test_tanh(self):
-        helper_test_op([(1, 16)], Tensor.tanh, lambda x: x.tanh(), atol=1e-6)
-        helper_test_op([(16, 32)], Tensor.tanh, lambda x: x.tanh(), atol=1e-6)
+        helper_test_op([(1,16)], Tensor.tanh, lambda x: x.tanh(), atol=1e-6)
+        helper_test_op([(16,32)], Tensor.tanh, lambda x: x.tanh(), atol=1e-6)
     def test_logsoftmax(self):
-        helper_test_op([(1, 16)], Tensor.logsoftmax, lambda x: torch.nn.functional.log_softmax(x, dim=1), atol=1e-6)
-        helper_test_op([(16, 32)], Tensor.logsoftmax, lambda x: torch.nn.functional.log_softmax(x, dim=1), atol=1e-6)
+        helper_test_op([(1,16)], Tensor.logsoftmax, lambda x: torch.nn.functional.log_softmax(x, dim=1), atol=1e-6)
+        helper_test_op([(16,32)], Tensor.logsoftmax, lambda x: torch.nn.functional.log_softmax(x, dim=1), atol=1e-6)
