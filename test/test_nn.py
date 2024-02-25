@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from easygrad.nn import Embedding
+from easygrad.nn import Embedding, LayerNorm
 from easygrad.tensor import Tensor
 
 
@@ -30,3 +30,50 @@ def test_embedding():
     loss_torch = out_torch.mean()
     loss_torch.backward()
     np.testing.assert_allclose(easy_embed.weights.grad, torch_embed.weight.grad.detach().numpy())
+
+
+def test_layer_norm():
+    normalized_shape = 4
+    x_torch = torch.randn(2, 2, normalized_shape)
+    x_easy = Tensor(x_torch.detach().numpy())
+
+    ### Default intialization (gamma=1, beta=0)
+    ln_torch = torch.nn.LayerNorm(normalized_shape)
+    ln_easy = LayerNorm(normalized_shape)
+    
+    # Forward
+    out_torch = ln_torch(x_torch)
+    out_easy = ln_easy(x_easy)
+    np.testing.assert_allclose(out_easy.data, out_torch.detach().numpy(), atol=1e-6)
+
+    # Backward
+    loss_torch = out_torch.mean()
+    loss_torch.backward()
+    loss_easy = out_easy.mean()
+    loss_easy.backward()
+    np.testing.assert_allclose(ln_easy.gamma.grad, ln_torch.weight.grad.detach().numpy(), atol=1e-6)
+    np.testing.assert_allclose(ln_easy.beta.grad, ln_torch.bias.grad.detach().numpy(), atol=1e-6)
+
+    ### Custom random initialization
+    gamma = torch.rand(normalized_shape)
+    beta = torch.rand(normalized_shape)
+
+    ln_easy = LayerNorm(normalized_shape)
+    ln_easy.gamma.data = gamma.detach().numpy()
+    ln_easy.beta.data = beta.detach().numpy()
+    ln_torch = torch.nn.LayerNorm(normalized_shape)
+    ln_torch.weight = torch.nn.Parameter(gamma)
+    ln_torch.bias = torch.nn.Parameter(beta)
+
+    # Forward
+    out_easy = ln_easy(x_easy)
+    out_torch = ln_torch(x_torch)
+    np.testing.assert_allclose(out_easy.data, out_torch.detach().numpy(), atol=1e-6)
+
+    # Backward
+    loss_easy = out_easy.mean()
+    loss_easy.backward()
+    loss_torch = out_torch.mean()
+    loss_torch.backward()
+    np.testing.assert_allclose(ln_easy.gamma.grad, ln_torch.weight.grad.detach().numpy(), atol=1e-6)
+    np.testing.assert_allclose(ln_easy.beta.grad, ln_torch.bias.grad.detach().numpy(), atol=1e-6)
