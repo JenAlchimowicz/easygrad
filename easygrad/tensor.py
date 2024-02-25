@@ -220,10 +220,20 @@ class Expand(Function):
     def backward(ctx: Context, grad: np.ndarray):
         original_shape, = ctx.saved_for_backward
         n_dims_to_reduce = len(grad.shape) - len(original_shape)
-        if np.prod(original_shape) == 1:
-            n_dims_to_reduce += 1
-        dims_to_reduce = tuple(np.arange(n_dims_to_reduce).tolist())
-        out = np.sum(grad, axis=dims_to_reduce)
+        
+        # Case when we only expand existing dims, e.g. [2,1]->[2,5] or [2]->[4]
+        if n_dims_to_reduce == 0:
+            dims_to_reduce = tuple(i for i, (d1, d2) in enumerate(zip(original_shape, grad.shape)) if d1!=d2)
+            keepdims = True if np.prod(original_shape) > 1 else False
+            out = np.sum(grad, axis=dims_to_reduce, keepdims=keepdims)
+
+        # Case when we add dims, e.g. [2,2]->[3,2,2]
+        else:
+            if np.prod(original_shape) == 1:
+                n_dims_to_reduce += 1
+            dims_to_reduce = tuple(np.arange(n_dims_to_reduce).tolist())
+            out = np.sum(grad, axis=dims_to_reduce, keepdims=False)
+ 
         return out if np.prod(original_shape) > 1 else np.array([out])
 register(Expand, "expand")
 

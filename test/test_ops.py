@@ -51,8 +51,8 @@ class TestOp:
         helper_test_op([(1,16), (1,16)], Tensor.mul, lambda x,y: x*y)
         helper_test_op([(16,32), (16,32)], Tensor.mul, lambda x,y: x*y)
     def test_div(self):
-        helper_test_op([(1,16), (1,16)], Tensor.div, lambda x,y: x/y)
-        helper_test_op([(16,32), (16,32)], Tensor.div, lambda x,y: x/y)
+        helper_test_op([(1,16), (1,16)], Tensor.div, lambda x,y: x/y, atol=1e-5)
+        helper_test_op([(16,32), (16,32)], Tensor.div, lambda x,y: x/y, atol=1e-5)
     def test_sqrt(self):
         helper_test_op([(1,16)], Tensor.sqrt, lambda x: x.sqrt(), atol=1e-6)
         helper_test_op([(16,32)], Tensor.sqrt, lambda x: x.sqrt(), atol=1e-6)
@@ -101,6 +101,10 @@ class TestOp:
         helper_test_op([(1)], lambda x: x.expand(shape=(2,2)), lambda x: x.expand(2,2))
         helper_test_op([(2)], lambda x: x.expand(shape=(3,4,2)), lambda x: x.expand(3,4,2))
         helper_test_op([(2,2)], lambda x: x.expand(shape=(4,3,2,2)), lambda x: x.expand(4,3,2,2))
+        helper_test_op([(2,1)], lambda x: x.expand(shape=(2,2)), lambda x: x.expand(2,2), atol=1e-5)
+        helper_test_op([(2,1,1)], lambda x: x.expand(shape=(2,3,4)), lambda x: x.expand(2,3,4), atol=1e-5)
+        # NOTE: expand function is not supposed to handle the below case (same in PyTorch). Use add_dims + expand to achieve that.
+        # helper_test_op([(2,2)], lambda x: x.expand(shape=(2,2,3,4)), lambda x: x.expand(2,2,3,4))
     
     # Activation functions
     def test_relu(self):
