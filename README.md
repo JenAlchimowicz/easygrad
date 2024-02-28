@@ -32,7 +32,6 @@ import numpy as np
 
 a = np.random.rand(1, 3).astype(np.float32)
 b = np.random.rand(3, 2).astype(np.float32)
-
 a = torch.tensor(a, requires_grad=True)
 b = torch.tensor(b, requires_grad=True)
 
@@ -45,6 +44,4 @@ print(b.grad.numpy())  # dd/db
 ```
 
 ## Todo
-- Add +, -, so on, and include those in tests, for more clarity
-- Add dropout
 - Finish BertEmbeddings
