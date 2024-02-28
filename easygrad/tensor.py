@@ -19,6 +19,7 @@ class Tensor:
         self.data = data
         self.grad = None
         self.ctx = None
+        self.training = True
 
     def topological_sort(self):
         topo = []

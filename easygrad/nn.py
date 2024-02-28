@@ -30,3 +30,14 @@ class LayerNorm:
         y = (x.sub(mean.expand(shape=x.shape))).div(std.expand(shape=x.shape))
         out = y.mul(self.gamma.expand(shape=x.shape)).add(self.beta.expand(shape=x.shape))
         return out
+
+class Dropout:
+    def __init__(self, p: float = 0.5):
+        self.p = p
+
+    def __call__(self, x: Tensor):
+        if not x.training or self.p == 0:
+            return self
+        mask = (np.random.rand(x.shape) > self.p) * (1/(1.0-self.p))
+        mask = Tensor(mask.astype(np.float32))
+        return self.mul(mask)
