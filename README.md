@@ -44,4 +44,6 @@ print(b.grad.numpy())  # dd/db
 ```
 
 ## Todo
-- Finish BertEmbeddings
+- Test BertEmbedding (compate to transformers outputs and grads)
+- Add linear
+- Add attention

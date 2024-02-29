@@ -37,7 +37,7 @@ class Dropout:
 
     def __call__(self, x: Tensor):
         if not x.training or self.p == 0:
-            return self
-        mask = (np.random.rand(x.shape) > self.p) * (1/(1.0-self.p))
+            return x
+        mask = (np.random.rand(*x.shape) > self.p) * (1/(1.0-self.p))
         mask = Tensor(mask.astype(np.float32))
-        return self.mul(mask)
+        return x.mul(mask)
