@@ -4,6 +4,17 @@ from easygrad.tensor import Tensor
 from easygrad.init import xavier_uniform
 
 
+class Linear:
+    def __init__(self, in_features: int, out_features: int, bias: bool = True):
+        self.weight = Tensor(xavier_uniform(in_features, out_features))
+        self.bias = Tensor(np.zeros((1, out_features))) if bias else None
+
+    def __call__(self, x: Tensor) -> Tensor:
+        out = x.dot(self.weight)
+        if self.bias is not None:
+            out = out.add(self.bias.expand(shape=out.shape))
+        return out
+    
 class Embedding:
     def __init__(self, size: int, embed_dim: int):
         self.weights = Tensor(xavier_uniform(size, embed_dim))

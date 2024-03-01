@@ -1,8 +1,30 @@
 import numpy as np
 import torch
 
-from easygrad.nn import Embedding, LayerNorm
+from easygrad.nn import Linear, Embedding, LayerNorm
 from easygrad.tensor import Tensor
+
+
+def test_linear():
+    for bias in (True, False):
+        linear_torch = torch.nn.Linear(3, 4, bias=bias)
+        linear_easy = Linear(3 ,4, bias=bias)
+        linear_easy.weight = Tensor(linear_torch.weight.detach().numpy().T)
+        if bias:
+            linear_easy.bias = Tensor(linear_torch.bias.detach().numpy())
+
+        input_torch = torch.rand((5,3), requires_grad=True)
+        input_easy = Tensor(input_torch.detach().numpy())
+
+        # Forward
+        out_torch = linear_torch(input_torch)
+        out_easy = linear_easy(input_easy)    
+        np.testing.assert_allclose(out_easy.data, out_torch.detach().numpy(), atol=1e-6)
+
+        # Backward
+        out_torch.mean().backward()
+        out_easy.mean().backward()
+        np.testing.assert_allclose(input_easy.grad, input_torch.grad.detach().numpy(), atol=1e-6)
 
 
 def test_embedding():
