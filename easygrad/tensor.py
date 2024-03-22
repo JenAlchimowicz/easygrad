@@ -238,6 +238,18 @@ class Expand(Function):
         return out if np.prod(original_shape) > 1 else np.array([out])
 register(Expand, "expand")
 
+class Permute(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray, dims: tuple):
+        ctx.save_for_backward(dims)
+        return np.transpose(x, dims)
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        dims, = ctx.saved_for_backward
+        inverse_dims = np.argsort(dims)
+        return np.transpose(grad, inverse_dims)
+register(Permute, "permute")
 
 ###### ACTIVATIONS #######
 
