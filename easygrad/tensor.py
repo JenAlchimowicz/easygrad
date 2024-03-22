@@ -310,7 +310,7 @@ register(LogSoftmax, "logsoftmax")
 
 class Softmax(Function):
     @staticmethod
-    def forward(ctx: Context, x: np.ndarray, dim: int = -1):
+    def forward(ctx: Context, x: np.ndarray, dim: int):
         max_per_sample = np.max(x, axis=dim, keepdims=True)
         e_x = np.exp(x - max_per_sample)
         out = e_x / np.sum(e_x, axis=dim, keepdims=True)
