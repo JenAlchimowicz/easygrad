@@ -303,7 +303,24 @@ class LogSoftmax(Function):
         return out
 
     @staticmethod
-    def backward(ctx, grad):
+    def backward(ctx: Context, grad: np.ndarray):
         out, = ctx.saved_for_backward
         return grad - np.exp(out)*grad.sum(axis=1).reshape((-1, 1))
 register(LogSoftmax, "logsoftmax")
+
+class Softmax(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray, dim: int = -1):
+        max_per_sample = np.max(x, axis=dim, keepdims=True)
+        e_x = np.exp(x - max_per_sample)
+        out = e_x / np.sum(e_x, axis=dim, keepdims=True)
+        ctx.save_for_backward(out, dim)
+        return out
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        softmax_output, dim = ctx.saved_for_backward
+        grad_out = softmax_output * (grad - np.sum(grad * softmax_output, axis=dim, keepdims=True))
+        return grad_out
+register(Softmax, "softmax")
+

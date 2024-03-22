@@ -123,3 +123,7 @@ class TestOp:
     def test_logsoftmax(self):
         helper_test_op([(1,16)], Tensor.logsoftmax, lambda x: torch.nn.functional.log_softmax(x, dim=1), atol=1e-6)
         helper_test_op([(16,32)], Tensor.logsoftmax, lambda x: torch.nn.functional.log_softmax(x, dim=1), atol=1e-6)
+    def test_softmax(self):
+        helper_test_op([(1,16)], lambda x: x.softmax(dim=1), lambda x: torch.nn.functional.softmax(x, dim=1), atol=1e-4)
+        helper_test_op([(4,8,16)], lambda x: x.softmax(dim=1), lambda x: torch.nn.functional.softmax(x, dim=1), atol=1e-4)
+        helper_test_op([(4,8,16,32)], lambda x: x.softmax(dim=3), lambda x: torch.nn.functional.softmax(x, dim=3), atol=1e-4)
