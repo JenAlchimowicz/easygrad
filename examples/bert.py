@@ -59,7 +59,7 @@ class BertSelfAttention:
         if len(attention_mask.shape) != 2:
             raise ValueError(f"Attention mask must be 2-dimensional, got {len(attention_mask.shape)} dimensions.")
         extended_attention_mask = attention_mask[:, None, None, :]
-        extended_attention_mask = -(1.0 - extended_attention_mask) * np.finfo(np.float32).min
+        extended_attention_mask = (1.0 - extended_attention_mask) * np.finfo(np.float32).min
         extended_attention_mask = Tensor(extended_attention_mask.astype(dtype)).expand(shape=shape)
         return extended_attention_mask
 
