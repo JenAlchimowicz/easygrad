@@ -120,6 +120,9 @@ class TestOp:
             return input * 0.5 * (1.0 + torch.erf(input / np.sqrt(2.0)))
         helper_test_op([(1,16)], Tensor.gelu_original, lambda x: gelu_original_transformers(x), atol=1e-6)
         helper_test_op([(16,32)], Tensor.gelu_original, lambda x: gelu_original_transformers(x), atol=1e-6)
+    def test_gelu(self):
+        helper_test_op([(1,16)], Tensor.gelu, lambda x: torch.nn.functional.gelu(x, approximate="tanh"), atol=1e-5)
+        helper_test_op([(16,32)], Tensor.gelu, lambda x: torch.nn.functional.gelu(x, approximate="tanh"), atol=1e-5)
     def test_sigmoid(self):
         helper_test_op([(1,16)], Tensor.sigmoid, lambda x: x.sigmoid())
         helper_test_op([(16,32)], Tensor.sigmoid, lambda x: x.sigmoid())

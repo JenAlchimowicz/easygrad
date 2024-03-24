@@ -274,8 +274,8 @@ def approximate_erf(x: np.ndarray) -> np.ndarray:
 
 class GELUoriginal(Function):
     """
-    Original Implementation of the GELU activation function in Google BERT repo when initially created. For
-    information: OpenAI GPT's GELU is slightly different (and gives slightly different results).
+    Original Implementation of the GELU activation function in Google BERT repo when initially created.
+    For information: OpenAI GPT's GELU is slightly different (and gives slightly different results).
     """
     @staticmethod
     def forward(ctx: Context, x: np.ndarray):
@@ -290,18 +290,30 @@ class GELUoriginal(Function):
         return grad * (cdf + x * pdf)
 register(GELUoriginal, "gelu_original")
 
+# Needed for backwards of GELU
+def sech_squared(x: np.ndarray) -> np.ndarray:
+    return np.square(2 / (np.exp(x) + np.exp(-x)))
+
 class GELU(Function):
     """
-    Implementation of the GELU activation function currently in PyTorch and Google BERT repo (identical to OpenAI GPT).
+    Implementation of the GELU activation function currently in Google BERT repo (identical to OpenAI GPT).
+    Uses the "tanh" approximation https://pytorch.org/docs/stable/generated/torch.nn.GELU.html.
     """
     @staticmethod
     def forward(ctx: Context, x: np.ndarray):
-        raise NotImplementedError("Currently only original version of GELU supported. See 'GELUoriginal'.")
+        ctx.save_for_backward(x)
+        return x * 0.5 * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * np.power(x, 3))))
 
     @staticmethod
     def backward(ctx: Context, grad: np.ndarray):
-        raise NotImplementedError("Currently only original version of GELU supported. See 'GELUoriginal'.")
-# register(GELUold, "gelu_original")
+        x, = ctx.saved_for_backward
+        out = (
+            0.5 * np.tanh(0.5 * (0.0713548 * np.power(x, 3) + 1.59577 * x)) 
+            + (0.0535161 * np.power(x, 3) + 0.398942 * x) * sech_squared(0.0356774 * np.power(x, 3) + 0.797885 * x)
+            + 0.5
+        )
+        return grad * out
+register(GELU, "gelu")
 
 class Sigmoid(Function):
     @staticmethod
