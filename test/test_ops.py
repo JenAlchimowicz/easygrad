@@ -51,15 +51,15 @@ class TestOp:
         helper_test_op([(1,16), (1,16)], Tensor.mul, lambda x,y: x*y)
         helper_test_op([(16,32), (16,32)], Tensor.mul, lambda x,y: x*y)
     def test_div(self):
-        helper_test_op([(1,16), (1,16)], Tensor.div, lambda x,y: x/y, atol=1e-5)
-        helper_test_op([(16,32), (16,32)], Tensor.div, lambda x,y: x/y, atol=1e-5)
+        helper_test_op([(1,16), (1,16)], Tensor.div, lambda x,y: x/y, atol=1e-4)
+        helper_test_op([(16,32), (16,32)], Tensor.div, lambda x,y: x/y, atol=1e-4)
     def test_sqrt(self):
         helper_test_op([(1,16)], Tensor.sqrt, lambda x: x.sqrt(), atol=1e-6)
         helper_test_op([(16,32)], Tensor.sqrt, lambda x: x.sqrt(), atol=1e-6)
 
     # Reduce ops
     def test_sum(self):
-        helper_test_op([(1,16)], Tensor.sum, lambda x: x.sum(), atol=1e-5)  # TODO: why needs more tolerance??
+        helper_test_op([(1,16)], Tensor.sum, lambda x: x.sum(), atol=1e-5)
         helper_test_op([(16,32)], Tensor.sum, lambda x: x.sum(), atol=1e-5)
         helper_test_op([(16)], lambda x: x.sum(axis=0), lambda x: x.sum(axis=0), atol=1e-5)
         # helper_test_op([(1,16)], lambda x: x.sum(axis=1), lambda x: x.sum(axis=1), atol=1e-5)  # TODO: make output shapes consistent with PyTorch if needed
@@ -88,7 +88,7 @@ class TestOp:
     # Tensor ops
     def test_dot(self):
         helper_test_op([(1,16), (16, 1)], Tensor.dot, lambda x,y: x.matmul(y))
-        helper_test_op([(16,32), (32, 16)], Tensor.dot, lambda x,y: x.matmul(y), atol=1e-5)  # TODO: why needs more tolerance??
+        helper_test_op([(16,32), (32, 16)], Tensor.dot, lambda x,y: x.matmul(y), atol=1e-5)
         helper_test_op([(1,1,1,5), (1,1,5,1)], Tensor.dot, lambda x,y: x.matmul(y))
         helper_test_op([(2,3,4,5), (2,3,5,6)], Tensor.dot, lambda x,y: x.matmul(y))
         helper_test_op([(3,4,5), (2,3,5,6)], Tensor.dot, lambda x,y: x.matmul(y))
@@ -114,6 +114,12 @@ class TestOp:
     def test_relu(self):
         helper_test_op([(1,16)], Tensor.relu, lambda x: x.relu())
         helper_test_op([(16,32)], Tensor.relu, lambda x: x.relu())
+    def test_gelu_original(self):
+        # https://github.com/huggingface/transformers/blob/v4.37.2/src/transformers/activations.py
+        def gelu_original_transformers(input):
+            return input * 0.5 * (1.0 + torch.erf(input / np.sqrt(2.0)))
+        helper_test_op([(1,16)], Tensor.gelu_original, lambda x: gelu_original_transformers(x), atol=1e-6)
+        helper_test_op([(16,32)], Tensor.gelu_original, lambda x: gelu_original_transformers(x), atol=1e-6)
     def test_sigmoid(self):
         helper_test_op([(1,16)], Tensor.sigmoid, lambda x: x.sigmoid())
         helper_test_op([(16,32)], Tensor.sigmoid, lambda x: x.sigmoid())

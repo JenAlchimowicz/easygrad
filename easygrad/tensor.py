@@ -267,6 +267,42 @@ class ReLU(Function):
         return grad_out
 register(ReLU, "relu")
 
+# approximation of the error function https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.erf.html
+def approximate_erf(x: np.ndarray) -> np.ndarray:
+    t = np.reciprocal(1 + 0.3275911 * np.abs(x))
+    return np.sign(x) * (1 - ((((1.061405429 * t + -1.453152027) * t + 1.421413741) * t + -0.284496736) * t +0.254829592) * t * np.exp(-(np.square(x))))
+
+class GELUoriginal(Function):
+    """
+    Original Implementation of the GELU activation function in Google BERT repo when initially created. For
+    information: OpenAI GPT's GELU is slightly different (and gives slightly different results).
+    """
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray):
+        cdf = 0.5 * (1.0 + approximate_erf(x / 1.41421))
+        ctx.save_for_backward(x, cdf)
+        return x * cdf
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        x, cdf = ctx.saved_for_backward
+        pdf = np.exp(-(np.log(np.sqrt(2 * np.pi)) + 0.5 * (x ** 2)))
+        return grad * (cdf + x * pdf)
+register(GELUoriginal, "gelu_original")
+
+class GELU(Function):
+    """
+    Implementation of the GELU activation function currently in PyTorch and Google BERT repo (identical to OpenAI GPT).
+    """
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray):
+        raise NotImplementedError("Currently only original version of GELU supported. See 'GELUoriginal'.")
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        raise NotImplementedError("Currently only original version of GELU supported. See 'GELUoriginal'.")
+# register(GELUold, "gelu_original")
+
 class Sigmoid(Function):
     @staticmethod
     def forward(ctx: Context, x: np.ndarray):
