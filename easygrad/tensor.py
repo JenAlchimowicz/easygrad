@@ -63,6 +63,15 @@ class Tensor:
 
     def __repr__(self):
         return f"Tensor of shape: {self.data.shape}, grad: {self.grad}, Data: {self.data}"
+    
+    def __add__(self, x):
+        return self.add(x)
+    def __sub__(self, x):
+        return self.sub(x)
+    def __mul__(self, x):
+        return self.mul(x)
+    def __truediv__(self, x):
+        return self.div(x)
 
 
 ###### FUNCTION DEF #######
