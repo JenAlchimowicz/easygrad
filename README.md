@@ -44,5 +44,7 @@ print(b.grad.numpy())  # dd/db
 ```
 
 ## Todo
-- Add attention
 - Add nn example to readme
+- Test bert
+- Write wights transfer module from HF
+- Add a more modern transformer to examples

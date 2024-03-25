@@ -7,14 +7,56 @@ from easygrad.nn import Embedding, Dropout, LayerNorm, Linear
 from typing import Tuple
 
 
+class Bert:
+    def __init__(
+        self,
+        vocab_size: int = 30522,
+        max_position_embeddings: int = 512,
+        type_vocab_size: int = 2,
+        num_hidden_layers: int = 12,
+        hidden_size: int = 768,
+        num_attention_heads: int = 12,
+        attention_probs_dropout_prob: float = 0.0,
+        layer_norm_eps: float = 1e-12,
+        hidden_dropout_prob: float = 0.1,
+    ):
+        self.embeddings = BertEmbedding(
+            vocab_size=vocab_size,
+            max_sequence_len=max_position_embeddings,
+            type_vocab_size=type_vocab_size,
+            embed_dim=hidden_size,
+            hidden_dropout_prob=hidden_dropout_prob,
+        )
+        self.encoder = BertEncoder(
+            num_hidden_layers,
+            hidden_size,
+            num_attention_heads,
+            attention_probs_dropout_prob,
+            layer_norm_eps,
+            hidden_dropout_prob,
+        )
+
+    def __call__(self, input_ids: np.ndarray, token_type_ids: np.ndarray, attention_mask: np.ndarray) -> Tensor:
+        embedding_output = self.embeddings(input_ids, token_type_ids)
+        encoded_output = self.encoder(embedding_output, attention_mask)
+        return encoded_output
+
+
 class BertEmbedding:
-    def __init__(self, vocab_size: int = 30522, max_sequence_len: int = 512, embed_dim: int = 768):
+    def __init__(
+        self,
+        vocab_size: int = 30522,
+        max_sequence_len: int = 512,
+        type_vocab_size: int = 2,
+        embed_dim: int = 768,
+        hidden_dropout_prob: float = 0.1,
+    ):
         self.word_embeddings = Embedding(vocab_size, embed_dim)
         self.position_embeddings = Embedding(max_sequence_len, embed_dim)
-        self.token_type_embeddings = Embedding(2, embed_dim)  # 2 fixed for BERT
+        self.token_type_embeddings = Embedding(type_vocab_size, embed_dim)
 
         self.layer_norm = LayerNorm(normalized_shape=embed_dim)
-        self.dropout = Dropout(p=0.1)
+        self.dropout = Dropout(p=hidden_dropout_prob)
 
     def __call__(
         self,
@@ -31,6 +73,93 @@ class BertEmbedding:
         out = self.layer_norm(final_embeddings)
         out = self.dropout(out)
         return out
+
+
+class BertEncoder:
+    def __init__(
+        self,
+        num_hidden_layers: int = 12,
+        hidden_size: int = 768,
+        num_attention_heads: int = 12,
+        attention_probs_dropout_prob: float = 0.0,
+        layer_norm_eps: float = 1e-12,
+        hidden_dropout_prob: float = 0.1,
+    ):
+        self.layer = [
+            BertLayer(hidden_size, num_attention_heads, attention_probs_dropout_prob, layer_norm_eps, hidden_dropout_prob)
+            for _ in range(num_hidden_layers)
+        ]
+
+    def __call__(self, hidden_states: Tensor, attention_mask: np.ndarray) -> Tensor:
+        for layer in self.layer:
+            hidden_states = layer(hidden_states, attention_mask)
+        return hidden_states
+
+
+class BertLayer:
+    def __init__(
+        self,
+        hidden_size: int = 768,
+        num_attention_heads: int = 12,
+        attention_probs_dropout_prob: float = 0.0,
+        layer_norm_eps: float = 1e-12,
+        hidden_dropout_prob: float = 0.1,
+    ):
+        self.attention = BertAttention(hidden_size, num_attention_heads, attention_probs_dropout_prob, layer_norm_eps, hidden_dropout_prob)
+        self.intermediate = BertIntermediate(hidden_size)
+        self.output = BertOutput(hidden_size, layer_norm_eps, hidden_dropout_prob)
+
+    def __call__(self, hidden_states: Tensor, attention_mask: np.ndarray) -> Tensor:
+        attention_output = self.attention(hidden_states, attention_mask)
+        intermediate_output = self.intermediate(attention_output)
+        layer_output = self.output(intermediate_output, attention_output)
+        return layer_output
+
+
+class BertIntermediate:
+    def __init__(self, hidden_size: int = 768):
+        self.dense = Linear(hidden_size, hidden_size)
+
+    def __call__(self, hidden_states: Tensor) -> Tensor:
+        hidden_states = self.dense(hidden_states)
+        hidden_states = hidden_states.gelu_original()
+        return hidden_states
+
+
+class BertOutput:
+    def __init__(
+        self,
+        hidden_size: int = 768,
+        layer_norm_eps: float = 1e-12,
+        hidden_dropout_prob: float = 0.1,
+    ):
+        self.dense = Linear(hidden_size, hidden_size)
+        self.LayerNorm = LayerNorm(hidden_size, layer_norm_eps)
+        self.dropout = Dropout(hidden_dropout_prob)
+
+    def __call__(self, hidden_states: Tensor, input_tensor: Tensor) -> Tensor:
+        hidden_states = self.dense(hidden_states)
+        hidden_states = self.dropout(hidden_states)
+        hidden_states = self.LayerNorm(hidden_states + input_tensor)
+        return hidden_states
+
+
+class BertAttention:
+    def __init__(
+        self,
+        hidden_size: int = 768,
+        num_attention_heads: int = 12,
+        attention_probs_dropout_prob: float = 0.0,
+        layer_norm_eps: float = 1e-12,
+        hidden_dropout_prob: float = 0.1,
+    ):
+        self.self = BertSelfAttention(hidden_size, num_attention_heads, attention_probs_dropout_prob)
+        self.output = BertSelfOutput(hidden_size, layer_norm_eps, hidden_dropout_prob)
+
+    def __call__(self, hidden_states: Tensor, attention_mask: np.ndarray) -> Tensor:
+        self_output = self.self(hidden_states, attention_mask)
+        attention_output = self.output(self_output, hidden_states)
+        return attention_output
 
 
 class BertSelfAttention:
@@ -91,13 +220,36 @@ class BertSelfAttention:
         return context_layer
 
 
+class BertSelfOutput:
+    def __init__(
+        self,
+        hidden_size: int = 768,
+        layer_norm_eps: float = 1e-12,
+        hidden_dropout_prob: float = 0.1,
+    ):
+        self.dense = Linear(hidden_size, hidden_size)
+        self.LayerNorm = LayerNorm(hidden_size, layer_norm_eps)
+        self.dropout = Dropout(hidden_dropout_prob)
+
+    def __call__(self, hidden_states: Tensor, input_tensor: Tensor) -> Tensor:
+        hidden_states = self.dense(hidden_states)
+        hidden_states = self.dropout(hidden_states)
+        hidden_states = self.LayerNorm(hidden_states + input_tensor)
+        return hidden_states
+
+
 if __name__ == "__main__":
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-    easy_bert_embedding = BertEmbedding(vocab_size=30522, max_sequence_len=512, embed_dim=768)
-    easy_bert_self_attention = BertSelfAttention(
+    easy_bert = Bert(
+        vocab_size=30522,
+        max_position_embeddings=512,
+        type_vocab_size=2,
+        num_hidden_layers=12,
         hidden_size=768,
         num_attention_heads=12,
-        attention_probs_dropout_prob=0.1
+        attention_probs_dropout_prob=0.0,
+        layer_norm_eps=1e-12,
+        hidden_dropout_prob=0.1,
     )
 
     sentences = [
@@ -105,10 +257,5 @@ if __name__ == "__main__":
         "This is another example sentence longer.",
     ]
     encoded_input = tokenizer(sentences, return_tensors="np", padding=True)
-    # For now
-    attention_mask = encoded_input["attention_mask"]
-    del encoded_input["attention_mask"]
-
-    out_embed = easy_bert_embedding(**encoded_input)
-    out_self_attention = easy_bert_self_attention(out_embed, attention_mask)
-    print(out_self_attention.shape)
+    output = easy_bert(**encoded_input)
+    print(output.shape)
