@@ -43,8 +43,38 @@ print(a.grad.numpy())  # dd/da
 print(b.grad.numpy())  # dd/db
 ```
 
+### Neural Networks
+We have a few NN utilities such as optimizers or weight initializations. All tested for consistency with PyTorch. For more complex examples (e.g. BERT) see [examples](examples) or [test on mnist](tests/test_mnist.py).
+```python
+import numpy as np
+from easygrad import Tensor
+from easygrad.init import xavier_uniform
+from easygrad.optim import Adam
+
+class EasyNet:
+    def __init__(self):
+        self.l1 = Tensor(xavier_uniform(4, 8))
+        self.l2 = Tensor(xavier_uniform(8, 1))
+
+    def __call__(self, x: Tensor):
+        return x.dot(self.l1).relu().dot(self.l2)
+
+model = EasyNet()
+optim = Adam([model.l1, model.l2], lr=3e-2)
+
+x = Tensor(np.random.rand(32, 4))
+y = Tensor(np.random.rand(32, 1))
+
+for i in range(10):
+    out = model(x)
+    loss = (y - out).square().mean()
+    optim.zero_grad()
+    loss.backward()
+    optim.step()
+    print(f"{i}, loss: {loss.data}")
+```
+
 ## Todo
-- Add nn example to readme
 - Test bert
 - Write wights transfer module from HF
 - Add a more modern transformer to examples
