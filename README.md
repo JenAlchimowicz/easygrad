@@ -44,7 +44,7 @@ print(b.grad.numpy())  # dd/db
 ```
 
 ### Neural Networks
-We have a few NN utilities such as optimizers or weight initializations. All tested for consistency with PyTorch. For more complex examples (e.g. BERT) see [examples](examples) or [test on mnist](tests/test_mnist.py).
+We have a few NN utilities such as optimizers or weight initializations. All tested for consistency with PyTorch. For more complex examples (e.g. BERT) see [examples](examples) or [test on mnist](test/test_mnist.py).
 ```python
 import numpy as np
 from easygrad import Tensor
