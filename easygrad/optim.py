@@ -1,20 +1,32 @@
+from typing import Tuple
+
 import numpy as np
 
+from easygrad import Tensor
 
-class SGD:
-    def __init__(self, params, lr=0.001):
+
+class Optimizer:
+    def __init__(self, params: Tuple[Tensor], lr: float):
         self.params = params
         self.lr = lr
+
+    def zero_grad(self):
+        for param in self.params:
+            param.grad = None
+
+
+class SGD(Optimizer):
+    def __init__(self, params, lr=0.001):
+        super().__init__(params, lr)
 
     def step(self):
         for param in self.params:
             param.data -= self.lr * param.grad
 
 
-class RMSprop:
+class RMSprop(Optimizer):
     def __init__(self, params, lr=0.01, decay=0.99, eps=1e-8):
-        self.params = params
-        self.lr = lr
+        super().__init__(params, lr)
         self.decay = decay
         self.eps = eps
         self.s = [np.zeros_like(param.data) for param in self.params]
@@ -25,10 +37,9 @@ class RMSprop:
             param.data -= self.lr * param.grad / np.sqrt(self.s[i] + self.eps)
 
 
-class Adam:
+class Adam(Optimizer):
     def __init__(self, params, lr=0.001, b1=0.9, b2=0.999, eps=1e-8):
-        self.params = params
-        self.lr = lr
+        super().__init__(params, lr)
         self.b1 = b1
         self.b2 = b2
         self.eps = eps
