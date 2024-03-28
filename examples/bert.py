@@ -35,11 +35,13 @@ class Bert:
             layer_norm_eps,
             hidden_dropout_prob,
         )
+        self.pooler = BertPooler(hidden_size)
 
     def __call__(self, input_ids: np.ndarray, token_type_ids: np.ndarray, attention_mask: np.ndarray) -> Tensor:
         embedding_output = self.embeddings(input_ids, token_type_ids)
         encoded_output = self.encoder(embedding_output, attention_mask)
-        return encoded_output
+        pooled_output = self.pooler(encoded_output)
+        return encoded_output, pooled_output
 
 
 class BertEmbedding:
@@ -55,7 +57,7 @@ class BertEmbedding:
         self.position_embeddings = Embedding(max_sequence_len, embed_dim)
         self.token_type_embeddings = Embedding(type_vocab_size, embed_dim)
 
-        self.layer_norm = LayerNorm(normalized_shape=embed_dim)
+        self.LayerNorm = LayerNorm(normalized_shape=embed_dim)
         self.dropout = Dropout(p=hidden_dropout_prob)
 
     def __call__(
@@ -70,7 +72,7 @@ class BertEmbedding:
         token_type_embed = self.token_type_embeddings(token_type_ids)
 
         final_embeddings = word_embed.add(position_embed).add(token_type_embed)
-        out = self.layer_norm(final_embeddings)
+        out = self.LayerNorm(final_embeddings)
         out = self.dropout(out)
         return out
 
@@ -238,6 +240,22 @@ class BertSelfOutput:
         return hidden_states
 
 
+class BertPooler:
+    def __init__(self, hidden_size: int = 768):
+        self.dense = Linear(hidden_size, hidden_size)
+
+    def __call__(self, hidden_states: Tensor) -> Tensor:
+        # Very weirdly take first token - we have no tensor slicing as of now
+        # We want to achieve first_token_tensor = hidden_states[:, 0, :]
+        mask = np.zeros(hidden_states.shape)
+        mask[:, 0, :] = 1
+        mask = Tensor(mask)
+        first_token_tensor = (hidden_states * mask).sum(axis=1)
+        pooled_output = self.dense(first_token_tensor)
+        pooled_output = pooled_output.tanh()
+        return pooled_output
+
+
 if __name__ == "__main__":
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     easy_bert = Bert(
@@ -257,5 +275,6 @@ if __name__ == "__main__":
         "This is another example sentence longer.",
     ]
     encoded_input = tokenizer(sentences, return_tensors="np", padding=True)
-    output = easy_bert(**encoded_input)
-    print(output.shape)
+    last_hidden_state, pooled_output = easy_bert(**encoded_input)
+    print(last_hidden_state.shape)
+    print(pooled_output.shape)
