@@ -23,7 +23,7 @@ class Embedding:
     def __call__(self, idx: np.ndarray):
         # TODO: add a check if shapes are ok
         out = Tensor(self.vocab_counter == np.expand_dims(idx, 2))
-        return out.dot(self.weights)
+        return out.dot(self.weight)
 
 class LayerNorm:
     def __init__(self, normalized_shape, eps: float = 1e-5):
