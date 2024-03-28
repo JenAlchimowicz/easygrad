@@ -15,6 +15,7 @@ class Bert:
         type_vocab_size: int = 2,
         num_hidden_layers: int = 12,
         hidden_size: int = 768,
+        intermediate_size: int = 3072,
         num_attention_heads: int = 12,
         attention_probs_dropout_prob: float = 0.0,
         layer_norm_eps: float = 1e-12,
@@ -30,6 +31,7 @@ class Bert:
         self.encoder = BertEncoder(
             num_hidden_layers,
             hidden_size,
+            intermediate_size,
             num_attention_heads,
             attention_probs_dropout_prob,
             layer_norm_eps,
@@ -82,13 +84,14 @@ class BertEncoder:
         self,
         num_hidden_layers: int = 12,
         hidden_size: int = 768,
+        intermediate_size: int = 3072,
         num_attention_heads: int = 12,
         attention_probs_dropout_prob: float = 0.0,
         layer_norm_eps: float = 1e-12,
         hidden_dropout_prob: float = 0.1,
     ):
         self.layer = [
-            BertLayer(hidden_size, num_attention_heads, attention_probs_dropout_prob, layer_norm_eps, hidden_dropout_prob)
+            BertLayer(hidden_size, intermediate_size, num_attention_heads, attention_probs_dropout_prob, layer_norm_eps, hidden_dropout_prob)
             for _ in range(num_hidden_layers)
         ]
 
@@ -102,14 +105,15 @@ class BertLayer:
     def __init__(
         self,
         hidden_size: int = 768,
+        intermediate_size:int = 3072,
         num_attention_heads: int = 12,
         attention_probs_dropout_prob: float = 0.0,
         layer_norm_eps: float = 1e-12,
         hidden_dropout_prob: float = 0.1,
     ):
         self.attention = BertAttention(hidden_size, num_attention_heads, attention_probs_dropout_prob, layer_norm_eps, hidden_dropout_prob)
-        self.intermediate = BertIntermediate(hidden_size)
-        self.output = BertOutput(hidden_size, layer_norm_eps, hidden_dropout_prob)
+        self.intermediate = BertIntermediate(hidden_size, intermediate_size)
+        self.output = BertOutput(hidden_size, intermediate_size, layer_norm_eps, hidden_dropout_prob)
 
     def __call__(self, hidden_states: Tensor, attention_mask: np.ndarray) -> Tensor:
         attention_output = self.attention(hidden_states, attention_mask)
@@ -119,8 +123,8 @@ class BertLayer:
 
 
 class BertIntermediate:
-    def __init__(self, hidden_size: int = 768):
-        self.dense = Linear(hidden_size, hidden_size)
+    def __init__(self, hidden_size: int = 768, intermediate_size: int = 3072):
+        self.dense = Linear(hidden_size, intermediate_size)
 
     def __call__(self, hidden_states: Tensor) -> Tensor:
         hidden_states = self.dense(hidden_states)
@@ -132,10 +136,11 @@ class BertOutput:
     def __init__(
         self,
         hidden_size: int = 768,
+        intermediate_size:int = 3072,
         layer_norm_eps: float = 1e-12,
         hidden_dropout_prob: float = 0.1,
     ):
-        self.dense = Linear(hidden_size, hidden_size)
+        self.dense = Linear(intermediate_size, hidden_size)
         self.LayerNorm = LayerNorm(hidden_size, layer_norm_eps)
         self.dropout = Dropout(hidden_dropout_prob)
 
@@ -264,6 +269,7 @@ if __name__ == "__main__":
         type_vocab_size=2,
         num_hidden_layers=12,
         hidden_size=768,
+        intermediate_size=3072,
         num_attention_heads=12,
         attention_probs_dropout_prob=0.0,
         layer_norm_eps=1e-12,
