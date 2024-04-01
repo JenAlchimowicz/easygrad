@@ -9,7 +9,7 @@ The engine can support a lot of basic operations such as add, mul, matmul as wel
 
 ### Quick example comparing to PyTorch
 ```python
-from easygrad.tensor import Tensor
+from easygrad import Tensor
 import numpy as np
 
 a = np.random.rand(1, 3).astype(np.float32)
