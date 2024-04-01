@@ -1,5 +1,4 @@
 import numpy as np
-from transformers import BertTokenizer
 
 from easygrad.tensor import Tensor
 from easygrad.nn import Embedding, Dropout, LayerNorm, Linear
@@ -262,8 +261,12 @@ class BertPooler:
 
 
 if __name__ == "__main__":
+    from examples.hf_weight_transfer import transfer_huggingface_weights, compare_easy_to_hf_outputs
+    from transformers import BertModel, BertTokenizer
+
+    # Usage
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-    easy_bert = Bert(
+    bert_easy = Bert(
         vocab_size=30522,
         max_position_embeddings=512,
         type_vocab_size=2,
@@ -281,6 +284,20 @@ if __name__ == "__main__":
         "This is another example sentence longer.",
     ]
     encoded_input = tokenizer(sentences, return_tensors="np", padding=True)
-    last_hidden_state, pooled_output = easy_bert(**encoded_input)
-    print(last_hidden_state.shape)
-    print(pooled_output.shape)
+    last_hidden_state, pooler_output = bert_easy(**encoded_input)
+    
+    # Compare to huggingface output
+    bert_hf = BertModel.from_pretrained("bert-base-uncased")
+    encoded_input_hf = tokenizer(sentences, return_tensors="pt", padding=True)
+    out_hf = bert_hf(**encoded_input_hf)
+
+    to_transpose = ["query.weight", "key.weight", "value.weight", "dense.weight"]
+    transfer_huggingface_weights(bert_easy, bert_hf, to_transpose)
+    last_hidden_state, pooler_output = bert_easy(**encoded_input)
+
+    last_hidden_state_results = compare_easy_to_hf_outputs(last_hidden_state.data, out_hf["last_hidden_state"].detach().numpy())
+    pooling_layer_results = compare_easy_to_hf_outputs(pooler_output.data, out_hf["pooler_output"].detach().numpy())
+    print("Last hidden states errors, easy output compared to hf output:")
+    [print(f"{k}: {v:.4f}") for k, v in last_hidden_state_results.items()]
+    print("\nPooling layer errors, easy output compared to hf output:")
+    [print(f"{k}: {v:.4f}") for k, v in pooling_layer_results.items()]
