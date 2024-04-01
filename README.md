@@ -75,6 +75,5 @@ for i in range(10):
 ```
 
 ## Todo
-- Test bert
-- Write wights transfer module from HF
+- Fix backward for bert and add example for full training
 - Add a more modern transformer to examples
