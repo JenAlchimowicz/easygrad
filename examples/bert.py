@@ -1,9 +1,9 @@
+from typing import Tuple
+
 import numpy as np
 
+from easygrad.nn import Dropout, Embedding, LayerNorm, Linear
 from easygrad.tensor import Tensor
-from easygrad.nn import Embedding, Dropout, LayerNorm, Linear
-
-from typing import Tuple
 
 
 class Bert:
@@ -261,8 +261,9 @@ class BertPooler:
 
 
 if __name__ == "__main__":
-    from examples.hf_weight_transfer import transfer_huggingface_weights, compare_easy_to_hf_outputs
     from transformers import BertModel, BertTokenizer
+
+    from examples.hf_weight_transfer import compare_easy_to_hf_outputs, transfer_huggingface_weights
 
     # Usage
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
