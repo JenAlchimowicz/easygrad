@@ -34,7 +34,7 @@ def test_embedding():
     weights_pt = torch.from_numpy(weights_np)
 
     easy_embed = Embedding(embed_size, embed_dim)
-    easy_embed.weights = Tensor(weights_np)
+    easy_embed.weight = Tensor(weights_np)
     torch_embed = torch.nn.Embedding.from_pretrained(weights_pt, freeze=False)
 
     # Forward
@@ -51,7 +51,7 @@ def test_embedding():
 
     loss_torch = out_torch.mean()
     loss_torch.backward()
-    np.testing.assert_allclose(easy_embed.weights.grad, torch_embed.weight.grad.detach().numpy())
+    np.testing.assert_allclose(easy_embed.weight.grad, torch_embed.weight.grad.detach().numpy())
 
 
 def test_layer_norm():
@@ -59,7 +59,7 @@ def test_layer_norm():
     x_torch = torch.randn(2, 2, normalized_shape)
     x_easy = Tensor(x_torch.detach().numpy())
 
-    ### Default intialization (gamma=1, beta=0)
+    ### Default intialization (weight=1, bias=0)
     ln_torch = torch.nn.LayerNorm(normalized_shape)
     ln_easy = LayerNorm(normalized_shape)
     
@@ -73,16 +73,16 @@ def test_layer_norm():
     loss_torch.backward()
     loss_easy = out_easy.mean()
     loss_easy.backward()
-    np.testing.assert_allclose(ln_easy.gamma.grad, ln_torch.weight.grad.detach().numpy(), atol=1e-6)
-    np.testing.assert_allclose(ln_easy.beta.grad, ln_torch.bias.grad.detach().numpy(), atol=1e-6)
+    np.testing.assert_allclose(ln_easy.weight.grad, ln_torch.weight.grad.detach().numpy(), atol=1e-6)
+    np.testing.assert_allclose(ln_easy.bias.grad, ln_torch.bias.grad.detach().numpy(), atol=1e-6)
 
-    ### Custom random initialization
+    # Custom random initialization
     gamma = torch.rand(normalized_shape)
     beta = torch.rand(normalized_shape)
 
     ln_easy = LayerNorm(normalized_shape)
-    ln_easy.gamma.data = gamma.detach().numpy()
-    ln_easy.beta.data = beta.detach().numpy()
+    ln_easy.weight.data = gamma.detach().numpy()
+    ln_easy.bias.data = beta.detach().numpy()
     ln_torch = torch.nn.LayerNorm(normalized_shape)
     ln_torch.weight = torch.nn.Parameter(gamma)
     ln_torch.bias = torch.nn.Parameter(beta)
@@ -97,5 +97,5 @@ def test_layer_norm():
     loss_easy.backward()
     loss_torch = out_torch.mean()
     loss_torch.backward()
-    np.testing.assert_allclose(ln_easy.gamma.grad, ln_torch.weight.grad.detach().numpy(), atol=1e-6)
-    np.testing.assert_allclose(ln_easy.beta.grad, ln_torch.bias.grad.detach().numpy(), atol=1e-6)
+    np.testing.assert_allclose(ln_easy.weight.grad, ln_torch.weight.grad.detach().numpy(), atol=1e-6)
+    np.testing.assert_allclose(ln_easy.bias.grad, ln_torch.bias.grad.detach().numpy(), atol=1e-6)
