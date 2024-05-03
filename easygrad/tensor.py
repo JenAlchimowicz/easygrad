@@ -21,6 +21,9 @@ class Tensor:
         self.ctx = None
         self.training = True
 
+        self.nnode = 0
+        self.nloop = 0
+
     def topological_sort(self):
         topo = []
         visited = set()
@@ -40,10 +43,12 @@ class Tensor:
         self.grad = np.array([1])
 
         for node in reversed(self.topological_sort()):
+            self.nnode += 1
             grads = node.ctx.op.backward(node.ctx, node.grad)
             if len(node.ctx.children) == 1:
                 grads = [grads]
             for child, grad in zip(node.ctx.children, grads):
+                self.nloop += 1
                 assert(child.data.shape == grad.shape), f"Wrong shapes of gradients, data shape: {child.data.shape}, grad shape: {grad.shape}, op: {node.ctx.op}"
                 child.grad = grad if child.grad is None else child.grad + grad
 
@@ -225,24 +230,22 @@ class Expand(Function):
         ctx.save_for_backward(x.shape)
         return np.broadcast_to(x, shape)
 
-    # TODO: there must be a cleaner way to write this
     @staticmethod
     def backward(ctx: Context, grad: np.ndarray):
         original_shape, = ctx.saved_for_backward
         n_dims_to_reduce = len(grad.shape) - len(original_shape)
-        
-        # Case when we only expand existing dims, e.g. [2,1]->[2,5] or [2]->[4]
-        if n_dims_to_reduce == 0:
-            dims_to_reduce = tuple(i for i, (d1, d2) in enumerate(zip(original_shape, grad.shape)) if d1!=d2)
-            keepdims = True if np.prod(original_shape) > 1 else False
-            out = np.sum(grad, axis=dims_to_reduce, keepdims=keepdims)
 
-        # Case when we add dims, e.g. [2,2]->[3,2,2]
-        else:
-            if np.prod(original_shape) == 1:
-                n_dims_to_reduce += 1
-            dims_to_reduce = tuple(np.arange(n_dims_to_reduce).tolist())
-            out = np.sum(grad, axis=dims_to_reduce, keepdims=False)
+        new_dims = tuple(np.arange(n_dims_to_reduce).tolist())
+        expanded_dims = tuple(
+            n_dims_to_reduce + i
+            for i, (d1, d2) in enumerate(zip(original_shape, grad.shape[n_dims_to_reduce:]))
+            if d1!=d2
+        )
+
+        out = np.sum(grad, axis=new_dims + expanded_dims, keepdims=False)
+        if np.prod(original_shape) > 1:
+            for dim in expanded_dims:
+                out = np.expand_dims(out, axis=dim-n_dims_to_reduce)
  
         return out if np.prod(original_shape) > 1 else np.array([out])
 register(Expand, "expand")

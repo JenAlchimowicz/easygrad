@@ -103,6 +103,7 @@ class TestOp:
         helper_test_op([(2,2)], lambda x: x.expand(shape=(4,3,2,2)), lambda x: x.expand(4,3,2,2))
         helper_test_op([(2,1)], lambda x: x.expand(shape=(2,2)), lambda x: x.expand(2,2), atol=1e-5)
         helper_test_op([(2,1,1)], lambda x: x.expand(shape=(2,3,4)), lambda x: x.expand(2,3,4), atol=1e-5)
+        helper_test_op([(1,3)], lambda x: x.expand(shape=(2,3,3)), lambda x: x.expand(2,3,3), atol=1e-5)
         # NOTE: expand function is not supposed to handle the below case (same in PyTorch). Use add_dims + expand to achieve that.
         # helper_test_op([(2,2)], lambda x: x.expand(shape=(2,2,3,4)), lambda x: x.expand(2,2,3,4))
     def test_permute(self):
