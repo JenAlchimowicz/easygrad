@@ -95,6 +95,7 @@ class TestOp:
     def test_reshape(self):
         helper_test_op([(1,16)], lambda x: x.reshape(shape=(4,4)), lambda x: torch.reshape(x, (4,4)))
         helper_test_op([(4,4)], lambda x: x.reshape(shape=(1,16)), lambda x: torch.reshape(x, (1,16)))
+        helper_test_op([(4,1)], lambda x: x.reshape(shape=(4,)), lambda x: torch.reshape(x, (4,)))
         helper_test_op([(4,3,6,6)], lambda x: x.reshape(shape=(-1,3,6,6)), lambda x: torch.reshape(x, (-1,3,6,6)))
     def test_expand(self):
         helper_test_op([(1)], lambda x: x.expand(shape=(2)), lambda x: x.expand(2))

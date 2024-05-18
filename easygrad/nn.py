@@ -1,3 +1,5 @@
+from typing import Any, List
+
 import numpy as np
 
 from easygrad.tensor import Tensor
@@ -52,3 +54,35 @@ class Dropout:
         mask = (np.random.rand(*x.shape) > self.p) * (1/(1.0-self.p))
         mask = Tensor(mask.astype(np.float32))
         return x.mul(mask)
+
+
+def get_parameters(model: Any) -> List[Tensor]:
+    parameters = []
+
+    # Check if the model itself is a Tensor
+    if isinstance(model, Tensor):
+        return [model]
+
+    # Check if the model has attributes (like layers)
+    for attr in dir(model):
+        # Skip private attributes and methods
+        if attr.startswith("_"):
+            continue
+        val = getattr(model, attr)
+
+        # If the attribute is a Tensor, add it to the list
+        if isinstance(val, Tensor):
+            parameters.append(val)
+        # If the attribute is a list or tuple, check each element
+        elif isinstance(val, (list, tuple)):
+            for item in val:
+                parameters.extend(get_parameters(item))
+        # If the attribute is a dictionary, check each value
+        elif isinstance(val, dict):
+            for key in val:
+                parameters.extend(get_parameters(val[key]))
+        # If the attribute is another object, recurse into it
+        elif hasattr(val, "__dict__"):
+            parameters.extend(get_parameters(val))
+
+    return parameters
