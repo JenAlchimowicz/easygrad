@@ -59,6 +59,9 @@ class TestOp:
     def test_log(self):
         helper_test_op([(1,16)], Tensor.log, lambda x: x.log(), atol=1e-6)
         helper_test_op([(16,32)], Tensor.log, lambda x: x.log(), atol=1e-6)
+    def test_exp(self):
+        helper_test_op([(1,16)], Tensor.exp, lambda x: x.exp(), atol=1e-6)
+        helper_test_op([(16,32)], Tensor.exp, lambda x: x.exp(), atol=1e-6)
 
     # Reduce ops
     def test_sum(self):

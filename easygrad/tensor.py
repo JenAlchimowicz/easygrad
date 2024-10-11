@@ -163,6 +163,19 @@ class Log(Function):
         return grad * 1 / x
 register(Log, "log")
 
+class Exp(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray):
+        out = np.exp(x)
+        ctx.save_for_backward(out)
+        return out
+
+    @staticmethod
+    def backward(ctx: Context, grad: np.ndarray):
+        out, = ctx.saved_for_backward
+        return grad * out
+register(Exp, "exp")
+
 
 ###### REDUCE OPS #######
 
