@@ -47,6 +47,9 @@ class TestOp:
     def test_sub(self):
         helper_test_op([(1,16), (1,16)], Tensor.sub, lambda x,y: x-y)
         helper_test_op([(16,32), (16,32)], Tensor.sub, lambda x,y: x-y)
+    def test_neg(self):
+        helper_test_op([(1,16)], lambda x: -x, lambda x: -x)
+        helper_test_op([(16,32)], lambda x: -x, lambda x: -x)
     def test_mul(self):
         helper_test_op([(1,16), (1,16)], Tensor.mul, lambda x,y: x*y)
         helper_test_op([(16,32), (16,32)], Tensor.mul, lambda x,y: x*y)

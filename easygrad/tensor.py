@@ -77,6 +77,9 @@ class Tensor:
         return self.mul(x)
     def __truediv__(self, x):
         return self.div(x)
+    def __neg__(self):
+        minus_one_tensor = Tensor(-np.ones(self.shape))
+        return self.mul(minus_one_tensor)
 
 
 ###### FUNCTION DEF #######
